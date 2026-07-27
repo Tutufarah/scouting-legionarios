@@ -1,0 +1,6 @@
+curl_cffi==0.15.0
+mplsoccer==1.7.1
+numpy==2.5.1
+pandas==3.0.5
+requests==2.34.2
+streamlit==1.60.0

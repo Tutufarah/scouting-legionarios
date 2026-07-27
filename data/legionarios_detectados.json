@@ -1,0 +1,342 @@
+[
+  {
+    "sofascore_id": 1464251,
+    "name": "Daniel Ribera",
+    "nacionalidad": "BO",
+    "current_club": "Talleres de Córdoba Reserve",
+    "club_id": 251006,
+    "pais_club": "Argentina",
+    "posicion_basica": "F",
+    "categorias": [
+      "Absoluta"
+    ],
+    "tournament_id": 18817,
+    "league_name": "Campeonato de Reserva de Primera División",
+    "posiciones_sofascore": [],
+    "main_position": "MC",
+    "id": "daniel-ribera"
+  },
+  {
+    "sofascore_id": 2549065,
+    "name": "Quimey Vasco",
+    "nacionalidad": "BO",
+    "current_club": "Gimnasia y Esgrima U20",
+    "club_id": 498451,
+    "pais_club": "Argentina",
+    "posicion_basica": "M",
+    "categorias": [
+      "Sub-17"
+    ],
+    "tournament_id": 27239,
+    "league_name": "Torneo Juvenil Superliga",
+    "posiciones_sofascore": [],
+    "main_position": "MC",
+    "id": "quimey-vasco"
+  },
+  {
+    "sofascore_id": 2365146,
+    "name": "Lysander  Ariel Lucas Urena",
+    "nacionalidad": "BO",
+    "current_club": "São Paulo U17",
+    "club_id": 342890,
+    "pais_club": "Brazil",
+    "posicion_basica": "D",
+    "categorias": [
+      "Sub-17"
+    ],
+    "tournament_id": 22794,
+    "league_name": "U17 Campeonato Brasileiro",
+    "posiciones_sofascore": [
+      "DC"
+    ],
+    "main_position": "DF",
+    "id": "lysander--ariel-lucas-urena"
+  },
+  {
+    "sofascore_id": 1484122,
+    "name": "Marcelo Torrez",
+    "nacionalidad": "BO",
+    "current_club": "Santos U20",
+    "club_id": 199299,
+    "pais_club": "Brazil",
+    "posicion_basica": "D",
+    "categorias": [
+      "Absoluta"
+    ],
+    "tournament_id": 9233,
+    "league_name": "U20 Campeonato Brasileiro",
+    "posiciones_sofascore": [
+      "DC"
+    ],
+    "main_position": "DF",
+    "id": "marcelo-torrez"
+  },
+  {
+    "sofascore_id": 1159656,
+    "name": "Miguelito",
+    "nacionalidad": "BO",
+    "current_club": "Santos",
+    "club_id": 1968,
+    "pais_club": "Brazil",
+    "posicion_basica": "M",
+    "categorias": [
+      "Absoluta"
+    ],
+    "tournament_id": 325,
+    "league_name": "Brasileirão Betano",
+    "posiciones_sofascore": [
+      "RW"
+    ],
+    "main_position": "ED",
+    "id": "miguelito"
+  },
+  {
+    "sofascore_id": 1114079,
+    "name": "Diego Medina",
+    "nacionalidad": "BO",
+    "current_club": "FC CSKA 1948 Sofia",
+    "club_id": 252080,
+    "pais_club": "Bulgaria",
+    "posicion_basica": "D",
+    "categorias": [
+      "Absoluta"
+    ],
+    "tournament_id": 247,
+    "league_name": "Parva Liga",
+    "posiciones_sofascore": [
+      "DR"
+    ],
+    "main_position": "DF",
+    "id": "diego-medina"
+  },
+  {
+    "sofascore_id": 1035650,
+    "name": "Efraín Morales",
+    "nacionalidad": "BO",
+    "current_club": "CF Montréal",
+    "club_id": 22006,
+    "pais_club": "Canada",
+    "posicion_basica": "D",
+    "categorias": [
+      "Absoluta"
+    ],
+    "tournament_id": 242,
+    "league_name": "MLS",
+    "posiciones_sofascore": [
+      "DC"
+    ],
+    "main_position": "DF",
+    "id": "efrain-morales"
+  },
+  {
+    "sofascore_id": 964296,
+    "name": "Gabriel Villamil",
+    "nacionalidad": "BO",
+    "current_club": "LDU",
+    "club_id": 5257,
+    "pais_club": "Ecuador",
+    "posicion_basica": "M",
+    "categorias": [
+      "Absoluta",
+      "Sub-23"
+    ],
+    "tournament_id": 240,
+    "league_name": "LigaPro Serie A",
+    "posiciones_sofascore": [
+      "MC",
+      "AM"
+    ],
+    "main_position": "MC",
+    "id": "gabriel-villamil"
+  },
+  {
+    "sofascore_id": 1424737,
+    "name": "Moisés Paniagua",
+    "nacionalidad": "BO",
+    "current_club": "Wydad Casablanca",
+    "club_id": 36268,
+    "pais_club": "Morocco",
+    "posicion_basica": "M",
+    "categorias": [
+      "Absoluta"
+    ],
+    "tournament_id": 937,
+    "league_name": "Botola Pro",
+    "posiciones_sofascore": [
+      "LW"
+    ],
+    "main_position": "ED",
+    "id": "moises-paniagua"
+  },
+  {
+    "sofascore_id": 876307,
+    "name": "Ramiro Vaca",
+    "nacionalidad": "BO",
+    "current_club": "Wydad Casablanca",
+    "club_id": 36268,
+    "pais_club": "Morocco",
+    "posicion_basica": "M",
+    "categorias": [
+      "Absoluta"
+    ],
+    "tournament_id": 937,
+    "league_name": "Botola Pro",
+    "posiciones_sofascore": [
+      "MC",
+      "AM"
+    ],
+    "main_position": "MC",
+    "id": "ramiro-vaca"
+  },
+  {
+    "sofascore_id": 1184194,
+    "name": "Daniel Lino",
+    "nacionalidad": "BO",
+    "current_club": "Comerciantes Unidos",
+    "club_id": 213609,
+    "pais_club": "Peru",
+    "posicion_basica": "D",
+    "categorias": [
+      "Sub-23"
+    ],
+    "tournament_id": 406,
+    "league_name": "Liga 1",
+    "posiciones_sofascore": [
+      "DL"
+    ],
+    "main_position": "DF",
+    "id": "daniel-lino"
+  },
+  {
+    "sofascore_id": 986778,
+    "name": "Roberto Fernández",
+    "nacionalidad": "BO",
+    "current_club": "Akron Togliatti",
+    "club_id": 285689,
+    "pais_club": "Russia",
+    "posicion_basica": "D",
+    "categorias": [
+      "Absoluta"
+    ],
+    "tournament_id": 203,
+    "league_name": "Russian Premier League",
+    "posiciones_sofascore": [
+      "DL",
+      "ML"
+    ],
+    "main_position": "DF",
+    "id": "roberto-fernandez"
+  },
+  {
+    "sofascore_id": 1390571,
+    "name": "Yomar Rocha",
+    "nacionalidad": "BO",
+    "current_club": "Akron Togliatti",
+    "club_id": 285689,
+    "pais_club": "Russia",
+    "posicion_basica": "D",
+    "categorias": [
+      "Sub-23"
+    ],
+    "tournament_id": 203,
+    "league_name": "Russian Premier League",
+    "posiciones_sofascore": [
+      "DR"
+    ],
+    "main_position": "DF",
+    "id": "yomar-rocha"
+  },
+  {
+    "sofascore_id": 1994814,
+    "name": "Lucas Macazaga",
+    "nacionalidad": "BO",
+    "current_club": "SD Ponferradina",
+    "club_id": 6195,
+    "pais_club": "Spain",
+    "posicion_basica": "D",
+    "categorias": [
+      "Absoluta"
+    ],
+    "tournament_id": 17073,
+    "league_name": "Primera Federación",
+    "posiciones_sofascore": [
+      "DR"
+    ],
+    "main_position": "DF",
+    "id": "lucas-macazaga"
+  },
+  {
+    "sofascore_id": 1994823,
+    "name": "Oscar Lopez",
+    "nacionalidad": "BO",
+    "current_club": "Mallorca B",
+    "club_id": 34997,
+    "pais_club": "Spain",
+    "posicion_basica": "M",
+    "categorias": [
+      "Absoluta"
+    ],
+    "tournament_id": 11360,
+    "league_name": "Tercera Federación, Group 11",
+    "posiciones_sofascore": [],
+    "main_position": "MC",
+    "id": "oscar-lopez"
+  },
+  {
+    "sofascore_id": 1017466,
+    "name": "Leonardo Justiniano",
+    "nacionalidad": "BO",
+    "current_club": "Rayong FC",
+    "club_id": 254730,
+    "pais_club": "Thailand",
+    "posicion_basica": "D",
+    "categorias": [
+      "Sub-23"
+    ],
+    "tournament_id": 1032,
+    "league_name": "Thai League 1",
+    "posiciones_sofascore": [
+      "DC"
+    ],
+    "main_position": "DF",
+    "id": "leonardo-justiniano"
+  },
+  {
+    "sofascore_id": 1510240,
+    "name": "Diego Arroyo",
+    "nacionalidad": "BO",
+    "current_club": "Shakhtar Donetsk",
+    "club_id": 3313,
+    "pais_club": "Ukraine",
+    "posicion_basica": "D",
+    "categorias": [
+      "Absoluta"
+    ],
+    "tournament_id": 218,
+    "league_name": "Ukrainian Premier League",
+    "posiciones_sofascore": [
+      "DC"
+    ],
+    "main_position": "DF",
+    "id": "diego-arroyo"
+  },
+  {
+    "sofascore_id": 2057454,
+    "name": "Gerónimo Govea",
+    "nacionalidad": "BO",
+    "current_club": "Montevideo Wanderers",
+    "club_id": 3240,
+    "pais_club": "Uruguay",
+    "posicion_basica": "G",
+    "categorias": [
+      "Absoluta"
+    ],
+    "tournament_id": 278,
+    "league_name": "Liga AUF Uruguaya",
+    "posiciones_sofascore": [
+      "GK"
+    ],
+    "main_position": "DF",
+    "id": "geronimo-govea"
+  }
+]
