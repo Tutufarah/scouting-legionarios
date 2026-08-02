@@ -201,9 +201,18 @@ st.markdown(
     }}
 
     /* ── cancha con los jugadores por puesto ── */
+    /* La cancha no se encoge por debajo de su ancho util: las tarjetas de
+       puesto miden en pixeles y, al estrecharse el campo, se pisaban unas con
+       otras. Si la pantalla es menor, se desplaza en horizontal. */
+    .cancha-scroll {{
+        width: 100%;
+        overflow-x: auto;
+        padding-bottom: 6px;
+    }}
     .cancha {{
         position: relative;
         width: 100%;
+        min-width: 1180px;
         aspect-ratio: 14 / 10;
         min-height: 560px;
         background:
@@ -220,10 +229,9 @@ st.markdown(
     /* tarjeta de un puesto: titulo del sitio y los jugadores apilados */
     .puesto {{
         position: absolute;
-        transform: translate(-50%, -50%);
         /* ancho acotado: si una tarjeta crece con un nombre largo se come el
            sitio de la de al lado y se pisan */
-        min-width: 166px;
+        min-width: 150px;
         max-width: 196px;
         background: rgba(9,14,21,0.90);
         border: 1px solid rgba(255,255,255,0.16);
@@ -559,19 +567,21 @@ def dibujar_radar(etiquetas, valores):
 # Sitio de cada puesto sobre el campo, en porcentaje (x = avance hacia la
 # porteria rival, y = de arriba abajo). La cancha va en horizontal y se ataca
 # hacia la derecha, como una pizarra tactica.
+# Cada puesto lleva (x, y, nombre, anclaje). El anclaje dice como se sujeta la
+# tarjeta: "centro" la centra sobre el punto, e "izq"/"der" la pegan al borde
+# correspondiente. Los puestos de los extremos del campo van anclados porque,
+# centrados, se salian del campo en pantallas estrechas.
 SITIO_PUESTO = {
-    # el portero va en 11 y no pegado a la linea de fondo: su tarjeta se
-    # centra sobre el punto y a menos de eso se salia del campo
-    "POR": (8, 50, "Portero"),
-    "LI": (24, 17, "Lateral izquierdo"),
-    "DFC": (24, 50, "Defensa central"),
-    "LD": (24, 83, "Lateral derecho"),
-    "MCD": (41, 50, "Mediocentro defensivo"),
-    "MC": (48, 26, "Mediocentro"),
-    "MCO": (52, 62, "Mediapunta"),
-    "EI": (72, 16, "Extremo izquierdo"),
-    "ED": (72, 84, "Extremo derecho"),
-    "DC": (85, 50, "Delantero centro"),
+    "POR": (3, 50, "Portero", "izq"),
+    "LI": (24, 17, "Lateral izquierdo", "centro"),
+    "DFC": (24, 50, "Defensa central", "centro"),
+    "LD": (24, 83, "Lateral derecho", "centro"),
+    "MCD": (41, 50, "Mediocentro defensivo", "centro"),
+    "MC": (48, 26, "Mediocentro", "centro"),
+    "MCO": (52, 62, "Mediapunta", "centro"),
+    "EI": (72, 16, "Extremo izquierdo", "centro"),
+    "ED": (72, 84, "Extremo derecho", "centro"),
+    "DC": (3, 50, "Delantero centro", "der"),
 }
 
 # Si un jugador no tuviera puesto concreto, cae en el sitio de su linea.
@@ -610,8 +620,14 @@ def dibujar_cancha_jugadores(jugadores_con_nota) -> str:
         )
         por_puesto.setdefault(clave, []).append(jugador)
 
+    anclajes = {
+        "centro": "left:{x}%;transform:translate(-50%,-50%)",
+        "izq": "left:{x}%;transform:translateY(-50%)",
+        "der": "right:{x}%;transform:translateY(-50%)",
+    }
+
     bloques = [lineas_svg]
-    for puesto, (x, y, titulo) in SITIO_PUESTO.items():
+    for puesto, (x, y, titulo, anclaje) in SITIO_PUESTO.items():
         del_puesto = por_puesto.get(puesto)
         if not del_puesto:
             continue
@@ -633,14 +649,15 @@ def dibujar_cancha_jugadores(jugadores_con_nota) -> str:
                 f"</a>"
             )
 
+        posicion = anclajes[anclaje].format(x=x)
         bloques.append(
-            f"<div class='puesto' style='left:{x}%;top:{y}%'>"
+            f"<div class='puesto' style='{posicion};top:{y}%'>"
             f"<div class='puesto-titulo'>{titulo}</div>"
             f"{''.join(filas)}"
             f"</div>"
         )
 
-    return f"<div class='cancha'>{''.join(bloques)}</div>"
+    return f"<div class='cancha-scroll'><div class='cancha'>{''.join(bloques)}</div></div>"
 
 
 def mapa_calor_cmap():
