@@ -178,6 +178,32 @@ def fecha_snapshot() -> str | None:
     return _cargar_snapshot().get("generado")
 
 
+@st.cache_data(ttl=3600, show_spinner=False)
+def estado_conexion() -> dict:
+    """Comprueba si desde aqui se puede consultar SofaScore en directo.
+
+    Hace una peticion real y ligera SIN pasar por la copia, para poder decir en
+    pantalla si lo que se ve son datos frescos o los guardados. Es la diferencia
+    entre que la app se actualice sola o haya que subir datos nuevos a mano.
+
+    Se recuerda una hora para no repetir la comprobacion en cada recarga.
+    """
+    url = f"{BASE_URL}/player/1159656"  # ficha ligera, siempre existe
+
+    if CURL_CFFI_DISPONIBLE:
+        try:
+            r = curl_requests.get(url, headers=HEADERS, impersonate="chrome", timeout=10)
+            if r.ok:
+                return {"en_vivo": True, "detalle": "conexion directa con SofaScore"}
+            motivo = f"SofaScore respondio HTTP {r.status_code}"
+        except Exception as exc:
+            motivo = f"{type(exc).__name__}"
+    else:
+        motivo = "curl_cffi no instalado"
+
+    return {"en_vivo": False, "detalle": motivo}
+
+
 def _pedir_json(ruta: str) -> tuple[dict | None, str | None]:
     """Hace GET y devuelve (datos, error). Nunca lanza excepcion.
 
