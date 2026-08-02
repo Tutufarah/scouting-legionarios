@@ -21,6 +21,10 @@ POSICIONES_VALIDAS = ("POR", "DF", "MC", "ED", "DEL")
 # Cada jugador incluye, en comentario, la posicion detallada que reporta
 # SofaScore, que es mas fina que las categorias de `main_position`.
 #
+# `puesto` es la posicion concreta dentro del once (LI, DFC, MCD, ED...),
+# mas fina que `main_position`, y es la que coloca a cada jugador en su
+# sitio del campo en la vista de cancha.
+#
 # `club_id` es el equipo en SofaScore y se guarda aparte porque hace falta
 # para pedir el calendario de proximos partidos. No se deduce de la ficha del
 # jugador porque a veces esta desactualizada (a Viscarra y a Cuellar SofaScore
@@ -32,7 +36,8 @@ LEGIONARIOS: list[dict] = [
         "current_club": "Comerciantes Unidos",
         "club_id": 213609,
         "league_name": "Liga 1",
-        "main_position": "DF",  # SofaScore: DL
+        "main_position": "DF",
+        "puesto": "LI",  # SofaScore: DL
         "sofascore_id": 1184194,
         "tournament_id": 406,
     },
@@ -42,7 +47,8 @@ LEGIONARIOS: list[dict] = [
         "current_club": "Talleres de Córdoba Reserve",
         "club_id": 251006,
         "league_name": "Campeonato de Reserva de Primera División",
-        "main_position": "DEL",  # SofaScore: ?
+        "main_position": "DEL",
+        "puesto": "DC",  # SofaScore: ?
         "sofascore_id": 1464251,
         "tournament_id": 18817,
         # OJO: posicion fijada por el cuerpo tecnico (SofaScore no la reporta)
@@ -53,7 +59,8 @@ LEGIONARIOS: list[dict] = [
         "current_club": "Shakhtar Donetsk",
         "club_id": 3313,
         "league_name": "Ukrainian Premier League",
-        "main_position": "DF",  # SofaScore: DC
+        "main_position": "DF",
+        "puesto": "DFC",  # SofaScore: DC
         "sofascore_id": 1510240,
         "tournament_id": 218,
     },
@@ -63,7 +70,8 @@ LEGIONARIOS: list[dict] = [
         "current_club": "FC CSKA 1948 Sofia",
         "club_id": 252080,
         "league_name": "Parva Liga",
-        "main_position": "DF",  # SofaScore: DR
+        "main_position": "DF",
+        "puesto": "LD",  # SofaScore: DR
         "sofascore_id": 1114079,
         "tournament_id": 247,
     },
@@ -73,7 +81,8 @@ LEGIONARIOS: list[dict] = [
         "current_club": "CF Montréal",
         "club_id": 22006,
         "league_name": "MLS",
-        "main_position": "DF",  # SofaScore: DC
+        "main_position": "DF",
+        "puesto": "DFC",  # SofaScore: DC
         "sofascore_id": 1035650,
         "tournament_id": 242,
     },
@@ -83,7 +92,8 @@ LEGIONARIOS: list[dict] = [
         "current_club": "Cheongju FC",
         "club_id": 314293,
         "league_name": "K League 2",
-        "main_position": "DEL",  # SofaScore: ST
+        "main_position": "DEL",
+        "puesto": "DC",  # SofaScore: ST
         "sofascore_id": 1525129,
         "tournament_id": 777,
     },
@@ -93,7 +103,8 @@ LEGIONARIOS: list[dict] = [
         "current_club": "LDU Quito",
         "club_id": 5257,
         "league_name": "LigaPro Serie A",
-        "main_position": "MC",  # SofaScore: MC/AM
+        "main_position": "MC",
+        "puesto": "MCO",  # SofaScore: MC/AM
         "sofascore_id": 964296,
         "tournament_id": 240,
     },
@@ -103,7 +114,8 @@ LEGIONARIOS: list[dict] = [
         "current_club": "Montevideo Wanderers",
         "club_id": 3240,
         "league_name": "Liga AUF Uruguaya",
-        "main_position": "POR",  # SofaScore: GK
+        "main_position": "POR",
+        "puesto": "POR",  # SofaScore: GK
         "sofascore_id": 2057454,
         "tournament_id": 278,
     },
@@ -113,7 +125,8 @@ LEGIONARIOS: list[dict] = [
         "current_club": "Alianza Lima",
         "club_id": 2311,
         "league_name": "Liga 1",
-        "main_position": "POR",  # SofaScore: GK
+        "main_position": "POR",
+        "puesto": "POR",  # SofaScore: GK
         "sofascore_id": 331437,
         "tournament_id": 406,
         # OJO: SofaScore no lo lista en la plantilla de Alianza, pero si tiene estadisticas en Liga 1 2026
@@ -124,7 +137,8 @@ LEGIONARIOS: list[dict] = [
         "current_club": "FC CSKA 1948 Sofia",
         "club_id": 252080,
         "league_name": "Parva Liga",
-        "main_position": "MC",  # SofaScore: MC/DM
+        "main_position": "MC",
+        "puesto": "MCD",  # SofaScore: MC/DM
         "sofascore_id": 1495631,
         "tournament_id": 247,
         # OJO: la ficha de SofaScore aun dice Always Ready, pero figura en la plantilla del CSKA y ya tiene partidos en Parva Liga 26/27
@@ -135,7 +149,8 @@ LEGIONARIOS: list[dict] = [
         "current_club": "FC CSKA 1948 Sofia",
         "club_id": 252080,
         "league_name": "Parva Liga",
-        "main_position": "ED",  # SofaScore: RW
+        "main_position": "ED",
+        "puesto": "ED",  # SofaScore: RW
         "sofascore_id": 1017482,
         "tournament_id": 247,
     },
@@ -145,7 +160,8 @@ LEGIONARIOS: list[dict] = [
         "current_club": "Rayong FC",
         "club_id": 254730,
         "league_name": "Thai League 1",
-        "main_position": "DF",  # SofaScore: DC
+        "main_position": "DF",
+        "puesto": "DFC",  # SofaScore: DC
         "sofascore_id": 1017466,
         "tournament_id": 1032,
     },
@@ -155,7 +171,8 @@ LEGIONARIOS: list[dict] = [
         "current_club": "SD Ponferradina",
         "club_id": 6195,
         "league_name": "Primera Federación",
-        "main_position": "DF",  # SofaScore: DR
+        "main_position": "DF",
+        "puesto": "LD",  # SofaScore: DR
         "sofascore_id": 1994814,
         "tournament_id": 17073,
     },
@@ -165,7 +182,8 @@ LEGIONARIOS: list[dict] = [
         "current_club": "Sin club actual",
         "club_id": None,
         "league_name": "Saudi 1st Division (ultima registrada)",
-        "main_position": "DF",  # SofaScore: DC
+        "main_position": "DF",
+        "puesto": "DFC",  # SofaScore: DC
         "sofascore_id": 876304,
         "tournament_id": 2120,
         # OJO: sin equipo: no hay proximos partidos y las cifras son de su ultima temporada registrada
@@ -176,7 +194,8 @@ LEGIONARIOS: list[dict] = [
         "current_club": "São Paulo U17",
         "club_id": 342890,
         "league_name": "U17 Campeonato Brasileiro",
-        "main_position": "DF",  # SofaScore: DC
+        "main_position": "DF",
+        "puesto": "DFC",  # SofaScore: DC
         "sofascore_id": 2365146,
         "tournament_id": 22794,
     },
@@ -186,7 +205,8 @@ LEGIONARIOS: list[dict] = [
         "current_club": "Santos U20",
         "club_id": 199299,
         "league_name": "U20 Campeonato Brasileiro",
-        "main_position": "DF",  # SofaScore: DC
+        "main_position": "DF",
+        "puesto": "DFC",  # SofaScore: DC
         "sofascore_id": 1484122,
         "tournament_id": 9233,
     },
@@ -196,7 +216,8 @@ LEGIONARIOS: list[dict] = [
         "current_club": "Santos",
         "club_id": 1968,
         "league_name": "Brasileirão Betano",
-        "main_position": "ED",  # SofaScore: RW
+        "main_position": "ED",
+        "puesto": "ED",  # SofaScore: RW
         "sofascore_id": 1159656,
         "tournament_id": 325,
     },
@@ -206,7 +227,8 @@ LEGIONARIOS: list[dict] = [
         "current_club": "Wydad Casablanca",
         "club_id": 36268,
         "league_name": "Botola Pro",
-        "main_position": "ED",  # SofaScore: LW
+        "main_position": "ED",
+        "puesto": "EI",  # SofaScore: LW
         "sofascore_id": 1424737,
         "tournament_id": 937,
     },
@@ -216,7 +238,8 @@ LEGIONARIOS: list[dict] = [
         "current_club": "Mallorca B",
         "club_id": 34997,
         "league_name": "Tercera Federación, Group 11",
-        "main_position": "MC",  # SofaScore: ?
+        "main_position": "MC",
+        "puesto": "MC",  # SofaScore: ?
         "sofascore_id": 1994823,
         "tournament_id": 11360,
     },
@@ -226,7 +249,8 @@ LEGIONARIOS: list[dict] = [
         "current_club": "Gimnasia y Esgrima U20",
         "club_id": 498451,
         "league_name": "Torneo Juvenil Superliga",
-        "main_position": "MC",  # SofaScore: ?
+        "main_position": "MC",
+        "puesto": "MC",  # SofaScore: ?
         "sofascore_id": 2549065,
         "tournament_id": 27239,
     },
@@ -236,7 +260,8 @@ LEGIONARIOS: list[dict] = [
         "current_club": "Wydad Casablanca",
         "club_id": 36268,
         "league_name": "Botola Pro",
-        "main_position": "MC",  # SofaScore: MC/AM
+        "main_position": "MC",
+        "puesto": "MCO",  # SofaScore: MC/AM
         "sofascore_id": 876307,
         "tournament_id": 937,
     },
@@ -246,7 +271,8 @@ LEGIONARIOS: list[dict] = [
         "current_club": "Akron Togliatti",
         "club_id": 285689,
         "league_name": "Russian Premier League",
-        "main_position": "DF",  # SofaScore: DL/ML
+        "main_position": "DF",
+        "puesto": "LI",  # SofaScore: DL/ML
         "sofascore_id": 986778,
         "tournament_id": 203,
     },
@@ -256,7 +282,8 @@ LEGIONARIOS: list[dict] = [
         "current_club": "Akron Togliatti",
         "club_id": 285689,
         "league_name": "Russian Premier League",
-        "main_position": "DF",  # SofaScore: DR
+        "main_position": "DF",
+        "puesto": "LD",  # SofaScore: DR
         "sofascore_id": 1390571,
         "tournament_id": 203,
     },

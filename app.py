@@ -5,6 +5,7 @@ Los datos de jugador vienen de `database.py` y las estadisticas de SofaScore a
 traves de `sofascore_api.py`. Nada aqui usa los CSV de prueba: el prototipo con
 datos ficticios quedo en `app_prototipo_datos_prueba.py`.
 """
+import math
 from datetime import datetime, timezone
 
 import numpy as np
@@ -18,6 +19,7 @@ from database import (
     POSICIONES_VALIDAS,
     obtener_todos_los_jugadores,
     obtener_jugadores_por_posicion,
+    obtener_jugador_por_id,
 )
 from sofascore_api import (
     get_player_stats,
@@ -27,6 +29,7 @@ from sofascore_api import (
     obtener_season_id,
     convertir_a_statsbomb,
     fecha_snapshot,
+    estado_conexion,
 )
 
 st.set_page_config(
@@ -44,6 +47,16 @@ TEXTO_TENUE = "#8A93A8"
 VERDE_NEON = "#00FF87"
 AMARILLO = "#FFD166"
 ROJO = "#FF5A5F"
+
+# Colores de la bandera, reservados para la franja de identidad. No se usan
+# para datos: el verde neon sigue siendo el acento de la interfaz y los tres
+# colores de estado (verde/ambar/rojo) tienen que leerse sin competencia.
+ROJO_BO = "#D52B1E"
+AMARILLO_BO = "#F9E300"
+VERDE_BO = "#007A33"
+
+CUERPO_TECNICO = "Oscar Villegas"
+ESLOGAN = "Construyendo el gol del futuro"
 
 NOMBRE_POSICION = {
     "POR": "Portero",
@@ -116,12 +129,184 @@ st.markdown(
     }}
 
     .tarjeta {{
+        position: relative;
         background: linear-gradient(160deg, {PANEL} 0%, #11151F 100%);
         border: 1px solid {BORDE};
-        border-radius: 16px;
+        border-radius: 14px;
         padding: 22px 24px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.55);
         margin-bottom: 16px;
+        /* sombra en dos capas: uno de contacto y otro de profundidad */
+        box-shadow: 0 1px 1px rgba(0,0,0,0.6), 0 14px 34px rgba(0,0,0,0.45);
+    }}
+    /* filo superior que da relieve sin anadir un borde visible */
+    .tarjeta::before {{
+        content: "";
+        position: absolute;
+        top: 0; left: 16px; right: 16px;
+        height: 1px;
+        background: linear-gradient(90deg,
+            transparent, rgba(255,255,255,0.10), transparent);
+    }}
+
+    /* ── identidad ── */
+    /* La bandera va como sello corto, no como banda a todo lo ancho: a pagina
+       completa competia con los datos, que son lo que hay que mirar. */
+    .franja-bo {{
+        width: 132px;
+        height: 3px;
+        border-radius: 2px;
+        background: linear-gradient(90deg,
+            {ROJO_BO} 0%, {ROJO_BO} 33.3%,
+            {AMARILLO_BO} 33.3%, {AMARILLO_BO} 66.6%,
+            {VERDE_BO} 66.6%, {VERDE_BO} 100%);
+    }}
+    /* regla completa: el sello a la izquierda y una linea tenue de continuacion */
+    .regla-identidad {{
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }}
+    .regla-identidad .linea {{
+        flex: 1;
+        height: 1px;
+        background: {BORDE};
+    }}
+
+    /* tarjeta de metrica propia, para igualar a las de Streamlit */
+    .metrica {{
+        background: {PANEL};
+        border: 1px solid {BORDE};
+        border-radius: 12px;
+        padding: 12px 14px;
+    }}
+    .metrica .etiqueta-metrica {{
+        color: {TEXTO_TENUE};
+        font-size: 0.64rem;
+        letter-spacing: 0.10em;
+        text-transform: uppercase;
+        margin-bottom: 4px;
+        /* la etiqueta se parte en dos lineas antes que recortarse: en columnas
+           estrechas "Asistencias" se quedaba en "A" */
+        white-space: normal;
+        overflow-wrap: anywhere;
+        line-height: 1.25;
+        min-height: 1.6em;
+    }}
+    .metrica .valor-metrica {{
+        color: {TEXTO};
+        font-size: 1.55rem;
+        font-weight: 700;
+        line-height: 1.2;
+        white-space: nowrap;
+    }}
+
+    /* ── cancha con los jugadores por puesto ── */
+    .cancha {{
+        position: relative;
+        width: 100%;
+        aspect-ratio: 14 / 10;
+        min-height: 560px;
+        background:
+            repeating-linear-gradient(90deg,
+                rgba(255,255,255,0.014) 0 6%, transparent 6% 12%),
+            linear-gradient(120deg, #0B2A1D 0%, #0A2318 55%, #081912 100%);
+        border: 1px solid {BORDE};
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 1px 1px rgba(0,0,0,0.6), 0 18px 40px rgba(0,0,0,0.5);
+    }}
+    .cancha svg {{ position: absolute; inset: 0; width: 100%; height: 100%; }}
+
+    /* tarjeta de un puesto: titulo del sitio y los jugadores apilados */
+    .puesto {{
+        position: absolute;
+        transform: translate(-50%, -50%);
+        /* ancho acotado: si una tarjeta crece con un nombre largo se come el
+           sitio de la de al lado y se pisan */
+        min-width: 166px;
+        max-width: 196px;
+        background: rgba(9,14,21,0.90);
+        border: 1px solid rgba(255,255,255,0.16);
+        border-radius: 10px;
+        overflow: hidden;
+        backdrop-filter: blur(3px);
+        box-shadow: 0 8px 22px rgba(0,0,0,0.55);
+    }}
+    .puesto-titulo {{
+        padding: 5px 10px 4px 10px;
+        color: rgba(230,234,243,0.55);
+        font-size: 0.56rem;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        background: rgba(255,255,255,0.05);
+        border-bottom: 1px solid rgba(255,255,255,0.10);
+        white-space: nowrap;
+    }}
+
+    a.fila-puesto {{
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 6px 10px;
+        text-decoration: none !important;
+        border-bottom: 1px solid rgba(255,255,255,0.07);
+        transition: background 0.12s ease;
+    }}
+    a.fila-puesto:last-child {{ border-bottom: none; }}
+    a.fila-puesto:hover {{ background: rgba(0,255,135,0.12); }}
+    a.fila-puesto .nombre-jugador {{
+        color: {TEXTO};
+        font-size: 0.74rem;
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }}
+    a.fila-puesto .nota-jugador {{ flex-shrink: 0; }}
+    a.fila-puesto .nota-jugador {{
+        font-size: 0.70rem;
+        font-weight: 700;
+    }}
+
+    .masthead {{
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 24px;
+        margin: 2px 0 10px 0;
+    }}
+    .masthead-titulo {{
+        color: {TEXTO};
+        font-size: 1.02rem;
+        font-weight: 800;
+        letter-spacing: 0.20em;
+        text-transform: uppercase;
+        line-height: 1.2;
+    }}
+    .masthead-eslogan {{
+        color: {VERDE_NEON};
+        font-size: 0.76rem;
+        font-style: italic;
+        letter-spacing: 0.05em;
+        margin-top: 3px;
+        opacity: 0.85;
+    }}
+    .masthead-ct {{
+        text-align: right;
+        white-space: nowrap;
+    }}
+    .masthead-ct .rol {{
+        color: {TEXTO_TENUE};
+        font-size: 0.62rem;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+    }}
+    .masthead-ct .nombre {{
+        color: {TEXTO};
+        font-size: 0.92rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
     }}
 
     .etiqueta {{
@@ -134,10 +319,13 @@ st.markdown(
     .valor {{ color: {TEXTO}; font-size: 1.06rem; font-weight: 600; }}
 
     .rating-num {{
-        font-size: 4.2rem;
+        font-size: 3.7rem;
         font-weight: 800;
-        line-height: 1;
+        line-height: 1.05;
         margin: 2px 0 0 0;
+        /* sin esto el numero se parte y el ultimo decimal cae a la linea de
+           abajo: "6.30" se leia como "6.3" con un "0" suelto debajo */
+        white-space: nowrap;
     }}
     .rating-pie {{ color: {TEXTO_TENUE}; font-size: 0.78rem; margin-top: 6px; }}
 
@@ -164,7 +352,37 @@ st.markdown(
     div[data-testid="stDataFrame"] {{
         border: 1px solid {BORDE};
         border-radius: 12px;
+        overflow: hidden;
     }}
+
+    /* las metricas de Streamlit, con el mismo lenguaje que las tarjetas */
+    div[data-testid="stMetric"] {{
+        background: {PANEL};
+        border: 1px solid {BORDE};
+        border-radius: 12px;
+        padding: 12px 14px;
+    }}
+    div[data-testid="stMetricLabel"] p {{
+        color: {TEXTO_TENUE} !important;
+        font-size: 0.66rem !important;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+    }}
+    div[data-testid="stMetricValue"] {{
+        font-size: 1.55rem !important;
+        font-weight: 700;
+    }}
+
+    /* pestañas: subrayado fino en vez del recuadro por defecto */
+    button[data-baseweb="tab"] {{
+        font-size: 0.74rem !important;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        font-weight: 700;
+    }}
+
+    /* separadores mas discretos */
+    hr {{ border-color: {BORDE} !important; opacity: 0.7; }}
 
     #MainMenu, footer {{ visibility: hidden; }}
     </style>
@@ -174,14 +392,42 @@ st.markdown(
 
 
 def color_rating(rating):
-    """Verde sobre 7.0, amarillo entre 6.5 y 6.9, rojo por debajo."""
-    if rating is None:
+    """Verde sobre 7.0, amarillo entre 6.5 y 6.9, rojo por debajo.
+
+    Un NaN (partido sin nota, por banquillo o no convocatoria) tiene que salir
+    en gris: si cayera en el ultimo caso se pintaria de rojo y pareceria una
+    actuacion pesima en vez de una ausencia.
+    """
+    if rating is None or (isinstance(rating, float) and math.isnan(rating)):
         return TEXTO_TENUE
     if rating > 7.0:
         return VERDE_NEON
     if rating >= 6.5:
         return AMARILLO
     return ROJO
+
+
+def color_nota_texto(texto):
+    """Color de una nota que ya viene formateada como texto ("6.70", "—")."""
+    try:
+        return color_rating(float(texto))
+    except (TypeError, ValueError):
+        return TEXTO_TENUE
+
+
+def tarjeta_metrica(etiqueta, valor, color=None):
+    """Tarjeta de metrica con la etiqueta completa.
+
+    Se usa en lugar de `st.metric` porque en columnas estrechas Streamlit
+    recorta la etiqueta a la primera letra ("Asistencias" quedaba en "A").
+    """
+    tono = color or TEXTO
+    return (
+        f"<div class='metrica'>"
+        f"<div class='etiqueta-metrica'>{etiqueta}</div>"
+        f"<div class='valor-metrica' style='color:{tono}'>{valor}</div>"
+        f"</div>"
+    )
 
 
 def por_90(valor, minutos):
@@ -310,6 +556,93 @@ def dibujar_radar(etiquetas, valores):
     return fig
 
 
+# Sitio de cada puesto sobre el campo, en porcentaje (x = avance hacia la
+# porteria rival, y = de arriba abajo). La cancha va en horizontal y se ataca
+# hacia la derecha, como una pizarra tactica.
+SITIO_PUESTO = {
+    # el portero va en 11 y no pegado a la linea de fondo: su tarjeta se
+    # centra sobre el punto y a menos de eso se salia del campo
+    "POR": (8, 50, "Portero"),
+    "LI": (24, 17, "Lateral izquierdo"),
+    "DFC": (24, 50, "Defensa central"),
+    "LD": (24, 83, "Lateral derecho"),
+    "MCD": (41, 50, "Mediocentro defensivo"),
+    "MC": (48, 26, "Mediocentro"),
+    "MCO": (52, 62, "Mediapunta"),
+    "EI": (72, 16, "Extremo izquierdo"),
+    "ED": (72, 84, "Extremo derecho"),
+    "DC": (85, 50, "Delantero centro"),
+}
+
+# Si un jugador no tuviera puesto concreto, cae en el sitio de su linea.
+SITIO_POR_DEFECTO = {"POR": "POR", "DF": "DFC", "MC": "MC", "ED": "ED", "DEL": "DC"}
+
+
+def dibujar_cancha_jugadores(jugadores_con_nota) -> str:
+    """Pizarra tactica con cada jugador en su puesto.
+
+    Cada puesto es una tarjeta apilada, al estilo de los onces ideales: si hay
+    varios jugadores para el mismo sitio, se listan uno debajo de otro
+    ordenados por su momento de forma.
+
+    Cada nombre es un enlace a `?jugador=<id>`, que la app lee al cargar para
+    abrir esa ficha.
+    """
+    lineas_svg = """
+    <svg viewBox="0 0 140 100" preserveAspectRatio="none">
+      <g fill="none" stroke="rgba(255,255,255,0.16)" stroke-width="0.30">
+        <rect x="1.5" y="1.5" width="137" height="97"/>
+        <line x1="70" y1="1.5" x2="70" y2="98.5"/>
+        <circle cx="70" cy="50" r="11"/>
+        <rect x="1.5" y="26" width="15" height="48"/>
+        <rect x="1.5" y="38" width="6" height="24"/>
+        <rect x="123.5" y="26" width="15" height="48"/>
+        <rect x="132.5" y="38" width="6" height="24"/>
+      </g>
+    </svg>
+    """
+
+    # se agrupan los jugadores por puesto
+    por_puesto = {}
+    for jugador in jugadores_con_nota:
+        clave = jugador.get("puesto") or SITIO_POR_DEFECTO.get(
+            jugador["main_position"], "MC"
+        )
+        por_puesto.setdefault(clave, []).append(jugador)
+
+    bloques = [lineas_svg]
+    for puesto, (x, y, titulo) in SITIO_PUESTO.items():
+        del_puesto = por_puesto.get(puesto)
+        if not del_puesto:
+            continue
+
+        del_puesto.sort(
+            key=lambda j: j["nota"] if j["nota"] is not None else -1, reverse=True
+        )
+
+        filas = []
+        for jugador in del_puesto:
+            nota = jugador.get("nota")
+            color = color_rating(nota)
+            nota_txt = f"{nota:.1f}" if isinstance(nota, (int, float)) else "s/d"
+            filas.append(
+                f"<a class='fila-puesto' href='?jugador={jugador['id']}' "
+                f"target='_self' title='{jugador['name']} · {jugador['current_club']}'>"
+                f"<span class='nombre-jugador'>{jugador['name']}</span>"
+                f"<span class='nota-jugador' style='color:{color}'>{nota_txt}</span>"
+                f"</a>"
+            )
+
+        bloques.append(
+            f"<div class='puesto' style='left:{x}%;top:{y}%'>"
+            f"<div class='puesto-titulo'>{titulo}</div>"
+            f"{''.join(filas)}"
+            f"</div>"
+        )
+
+    return f"<div class='cancha'>{''.join(bloques)}</div>"
+
+
 def mapa_calor_cmap():
     """Degradado oscuro -> verde neon -> amarillo -> rojo."""
     return LinearSegmentedColormap.from_list(
@@ -356,17 +689,35 @@ def dibujar_heatmap(xs, ys, pesos):
 
 with st.sidebar:
     st.markdown(
-        f"<div style='font-size:1.05rem;font-weight:800;letter-spacing:0.10em;"
-        f"color:{TEXTO};margin-bottom:2px'>SCOUTING LEGIONARIOS 🇧🇴</div>"
-        f"<div style='color:{TEXTO_TENUE};font-size:0.72rem;letter-spacing:0.08em'>"
-        f"Bolivianos en el exterior</div><hr style='border-color:{BORDE}'>",
+        f"""
+        <div class='franja-bo' style='margin-bottom:14px'></div>
+        <div style='font-size:1.0rem;font-weight:800;letter-spacing:0.14em;
+             color:{TEXTO};line-height:1.25'>SCOUTING<br>LEGIONARIOS</div>
+        <div style='color:{TEXTO_TENUE};font-size:0.68rem;letter-spacing:0.14em;
+             text-transform:uppercase;margin-top:6px'>Bolivianos en el exterior</div>
+        <hr style='border-color:{BORDE};margin:16px 0'>
+        """,
         unsafe_allow_html=True,
     )
+
+    # Si se llega desde un nombre de la cancha, viene ?jugador=<id> en la URL.
+    # Se pasa a session_state y se limpia la URL en el acto: si se dejara, en
+    # cada recarga volveria a imponer ese jugador y el selector quedaria muerto.
+    desde_cancha = st.query_params.get("jugador")
+    if desde_cancha:
+        elegido_por_cancha = obtener_jugador_por_id(desde_cancha)
+        if elegido_por_cancha:
+            st.session_state["jugador_sel"] = elegido_por_cancha["name"]
+            # el filtro se abre para que el jugador siempre este entre las
+            # opciones, venga de la posicion que venga
+            st.session_state["filtro_pos"] = "Todas"
+        st.query_params.clear()
 
     filtro_posicion = st.selectbox(
         "Posicion",
         ["Todas"] + list(POSICIONES_VALIDAS),
         format_func=lambda p: p if p == "Todas" else f"{p} · {NOMBRE_POSICION[p]}",
+        key="filtro_pos",
     )
 
     if filtro_posicion == "Todas":
@@ -379,7 +730,12 @@ with st.sidebar:
         st.stop()
 
     nombres = {j["name"]: j for j in candidatos}
-    nombre_elegido = st.selectbox("Jugador", list(nombres))
+    # Si el jugador guardado ya no encaja con el filtro, se vuelve al primero
+    # para que el selector no reciba un valor que no esta entre sus opciones.
+    if st.session_state.get("jugador_sel") not in nombres:
+        st.session_state["jugador_sel"] = next(iter(nombres))
+
+    nombre_elegido = st.selectbox("Jugador", list(nombres), key="jugador_sel")
     jugador = nombres[nombre_elegido]
 
     st.markdown(f"<hr style='border-color:{BORDE}'>", unsafe_allow_html=True)
@@ -413,12 +769,41 @@ with st.sidebar:
         st.rerun()
     st.caption("Los datos se guardan en cache 7 dias.")
 
+    # Semaforo de origen de los datos: en verde la app se actualiza sola; en
+    # ambar hay que refrescar la copia a mano y volver a subirla.
+    conexion = estado_conexion()
     generado = fecha_snapshot()
-    if generado:
-        st.caption(
-            f"Copia de respaldo del {generado[:10]}. Se usa solo si no se puede "
-            "consultar SofaScore en directo."
+
+    if conexion["en_vivo"]:
+        st.markdown(
+            f"<div style='color:{VERDE_NEON};font-size:0.78rem;font-weight:600'>"
+            f"🟢 Datos en vivo de SofaScore</div>"
+            f"<div style='color:{TEXTO_TENUE};font-size:0.7rem'>"
+            f"Se actualizan solos cada 7 dias.</div>",
+            unsafe_allow_html=True,
         )
+    else:
+        st.markdown(
+            f"<div style='color:{AMARILLO};font-size:0.78rem;font-weight:600'>"
+            f"🟡 Sin acceso directo a SofaScore</div>"
+            f"<div style='color:{TEXTO_TENUE};font-size:0.7rem'>"
+            f"Mostrando la copia del {generado[:10] if generado else '—'}. "
+            f"Para refrescarla hay que regenerarla y volver a subirla.</div>",
+            unsafe_allow_html=True,
+        )
+
+    st.markdown(
+        f"""
+        <hr style='border-color:{BORDE};margin:20px 0 14px 0'>
+        <div style='color:{TEXTO_TENUE};font-size:0.60rem;letter-spacing:0.22em;
+             text-transform:uppercase'>Cuerpo tecnico</div>
+        <div style='color:{TEXTO};font-size:0.90rem;font-weight:700;
+             letter-spacing:0.03em;margin-top:2px'>{CUERPO_TECNICO}</div>
+        <div style='color:{VERDE_NEON};font-size:0.70rem;font-style:italic;
+             opacity:0.8;margin-top:6px'>{ESLOGAN}</div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 # Etiqueta de la temporada: si se pidio una manual no conocemos su nombre,
@@ -437,7 +822,30 @@ heatmap = get_player_heatmap(
     jugador["sofascore_id"], jugador["tournament_id"], season_elegida
 )
 
-tab_ficha, tab_plantel = st.tabs(["  Ficha individual  ", "  Todos los jugadores  "])
+st.markdown(
+    f"""
+    <div class='masthead'>
+      <div>
+        <div class='masthead-titulo'>Scouting Legionarios</div>
+        <div class='masthead-eslogan'>{ESLOGAN}</div>
+      </div>
+      <div class='masthead-ct'>
+        <div class='rol'>Cuerpo tecnico</div>
+        <div class='nombre'>{CUERPO_TECNICO}</div>
+      </div>
+    </div>
+    <div class='regla-identidad'>
+      <div class='franja-bo'></div>
+      <div class='linea'></div>
+    </div>
+    <div style='height:18px'></div>
+    """,
+    unsafe_allow_html=True,
+)
+
+tab_ficha, tab_cancha, tab_plantel = st.tabs(
+    ["  Ficha individual  ", "  Cancha  ", "  Todos los jugadores  "]
+)
 
 with tab_ficha:
     st.markdown(
@@ -491,9 +899,12 @@ with tab_ficha:
         )
 
         c1, c2, c3 = st.columns(3)
-        c1.metric("Goles", stats["goals"])
-        c2.metric("Asist.", stats["assists"])
-        c3.metric("Titular", stats["matches_started"])
+        for columna, etiqueta, valor in (
+            (c1, "Goles", stats["goals"]),
+            (c2, "Asistencias", stats["assists"]),
+            (c3, "De titular", stats["matches_started"]),
+        ):
+            columna.markdown(tarjeta_metrica(etiqueta, valor), unsafe_allow_html=True)
 
     # ── Columna 2: radar ──
     with col_radar:
@@ -542,16 +953,22 @@ with tab_ficha:
 
         r1, r2, r3, r4, r5 = st.columns(5)
         r1.markdown(
-            f"<div class='etiqueta'>Media ultimos 6</div>"
-            f"<div style='font-size:2.1rem;font-weight:800;color:{color_media};"
-            f"text-shadow:0 0 18px {color_media}44;line-height:1.1'>"
-            f"{media if media is not None else 's/d'}</div>",
+            tarjeta_metrica(
+                "Media ultimos 6",
+                media if media is not None else "s/d",
+                color_media,
+            ),
             unsafe_allow_html=True,
         )
-        r2.metric("Jugados", ultimos["jugados"])
-        r3.metric("Banquillo", ultimos["banquillo"])
-        r4.metric("No convocado", ultimos["no_convocado"])
-        r5.metric("Minutos", ultimos["minutos_totales"])
+        for columna, etiqueta, valor, tono in (
+            (r2, "Jugados", ultimos["jugados"], VERDE_NEON),
+            (r3, "Banquillo", ultimos["banquillo"], AMARILLO),
+            (r4, "No convocado", ultimos["no_convocado"], ROJO),
+            (r5, "Minutos", ultimos["minutos_totales"], None),
+        ):
+            columna.markdown(
+                tarjeta_metrica(etiqueta, valor, tono), unsafe_allow_html=True
+            )
 
         filas_partidos = []
         for p in ultimos["partidos"]:
@@ -569,10 +986,17 @@ with tab_ficha:
             })
 
         tabla_partidos = pd.DataFrame(filas_partidos)
+        # La nota pasa a texto: dejandola numerica, Streamlit se come el decimal
+        # final (6.70 se veia 6.7) y los partidos sin nota salian vacios sin
+        # distinguirse de un dato que falta.
+        tabla_partidos["Nota"] = pd.to_numeric(
+            tabla_partidos["Nota"], errors="coerce"
+        ).map(lambda v: "—" if pd.isna(v) else f"{v:.2f}")
 
         estilo_partidos = (
             tabla_partidos.style
-            .map(lambda v: f"color:{color_rating(v)};font-weight:700", subset=["Nota"])
+            .map(lambda v: f"color:{color_nota_texto(v)};font-weight:700",
+                 subset=["Nota"])
             .map(lambda v: f"color:{COLOR_RESULTADO.get(v, TEXTO)}", subset=["Resultado"])
             .map(
                 lambda v: f"color:{COLOR_ESTADO.get(v.replace('Jugó', 'Jugo'), TEXTO)};"
@@ -581,15 +1005,7 @@ with tab_ficha:
             )
         )
 
-        st.dataframe(
-            estilo_partidos,
-            width="stretch",
-            hide_index=True,
-            column_config={
-                "Nota": st.column_config.NumberColumn("Nota", format="%.1f"),
-                "Min": st.column_config.NumberColumn("Min", format="%d"),
-            },
-        )
+        st.dataframe(estilo_partidos, width="stretch", hide_index=True)
         st.caption(
             "Los ultimos 6 partidos del equipo, sin importar la competicion "
             "(liga, copas y seleccion). Se marca si jugo, si fue al banquillo sin "
@@ -668,6 +1084,32 @@ with tab_ficha:
     )
 
 
+# ───────────────────── pestaña: cancha ─────────────────────
+
+with tab_cancha:
+    st.markdown(
+        "<div class='titulo-seccion'>Plantel por puesto</div>",
+        unsafe_allow_html=True,
+    )
+    st.caption(
+        "Toca un nombre para abrir su ficha. El numero es su media de los "
+        "ultimos 6 partidos y el filo de color, como viene de rendimiento."
+    )
+
+    with st.spinner("Cargando el plantel..."):
+        jugadores_cancha = []
+        for j in obtener_todos_los_jugadores():
+            u = get_player_last_matches(j["sofascore_id"])
+            jugadores_cancha.append({**j, "nota": u["media_rating"]})
+
+    # dentro de cada linea, primero los de mejor momento
+    jugadores_cancha.sort(
+        key=lambda j: j["nota"] if j["nota"] is not None else -1, reverse=True
+    )
+
+    st.markdown(dibujar_cancha_jugadores(jugadores_cancha), unsafe_allow_html=True)
+
+
 # ───────────────────── pestaña: todos los jugadores ─────────────────────
 
 with tab_plantel:
@@ -684,6 +1126,9 @@ with tab_plantel:
             s = get_player_stats(j["sofascore_id"], j["tournament_id"])
             u = get_player_last_matches(j["sofascore_id"])
             filas_plantel.append({
+                # la columna Abrir es un enlace a la propia app; al pulsarlo
+                # llega ?jugador=<id> y se abre su ficha, igual que en la cancha
+                "Abrir": f"?jugador={j['id']}",
                 "Jugador": j["name"],
                 "Pos": j["main_position"],
                 "Club": j["current_club"],
@@ -701,21 +1146,32 @@ with tab_plantel:
                 "Min 6": u["minutos_totales"],
             })
 
+    plantel = pd.DataFrame(filas_plantel)
+    for columna in ("Nota temp.", "Media 6"):
+        plantel[columna] = pd.to_numeric(plantel[columna], errors="coerce")
+
     # Se ordena por la media de los ultimos 6 y no por la nota de temporada:
     # para ver quien esta en forma AHORA, lo reciente manda.
-    plantel = pd.DataFrame(filas_plantel).sort_values(
-        "Media 6", ascending=False, na_position="last"
-    )
+    plantel = plantel.sort_values("Media 6", ascending=False, na_position="last")
+
+    # Ya ordenado, las notas pasan a texto. Si se dejan numericas Streamlit las
+    # reinterpreta y se come el cero final: 7.30 se veia como 7.3.
+    for columna in ("Nota temp.", "Media 6"):
+        plantel[columna] = plantel[columna].map(
+            lambda v: "—" if pd.isna(v) else f"{v:.2f}"
+        )
 
     st.dataframe(
-        plantel.style
-        .map(lambda v: f"color:{color_rating(v)};font-weight:700",
-             subset=["Nota temp.", "Media 6"]),
+        plantel.style.map(
+            lambda v: f"color:{color_nota_texto(v)};font-weight:700",
+            subset=["Nota temp.", "Media 6"],
+        ),
         width="stretch",
         hide_index=True,
         column_config={
-            "Nota temp.": st.column_config.NumberColumn("Nota temp.", format="%.2f"),
-            "Media 6": st.column_config.NumberColumn("Media 6", format="%.2f"),
+            "Abrir": st.column_config.LinkColumn(
+                "Ficha", display_text="Ver perfil", width="small"
+            ),
         },
     )
 
