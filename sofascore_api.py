@@ -158,18 +158,37 @@ MAPA_ESTADISTICAS = {
 def _cargar_snapshot() -> dict:
     """Copia local de las respuestas, usada si la red falla.
 
-    Se lee una sola vez y se guarda en memoria. Si el archivo no existe, la app
+    Busca el archivo en `data/` y tambien junto al codigo, y se queda con el
+    MAS RECIENTE de los dos. El motivo es practico: al subir la copia por la
+    web de GitHub arrastrando carpetas, los archivos de subcarpetas acaban a
+    veces en la raiz del repositorio. Si solo se mirara en `data/`, la app
+    seguiria sirviendo datos viejos sin dar ningun error, que es justo el fallo
+    silencioso que hay que evitar.
+
+    Se lee una sola vez y se guarda en memoria. Si no hay archivo, la app
     funciona igual: simplemente no hay respaldo.
     """
     global _SNAPSHOT
     if _SNAPSHOT is not None:
         return _SNAPSHOT
 
-    ruta = Path(__file__).resolve().parent / "data" / "snapshot_sofascore.json"
-    try:
-        _SNAPSHOT = json.loads(ruta.read_text(encoding="utf-8"))
-    except Exception:
-        _SNAPSHOT = {"respuestas": {}, "generado": None}
+    base = Path(__file__).resolve().parent
+    candidatos = [
+        base / "data" / "snapshot_sofascore.json",
+        base / "snapshot_sofascore.json",
+    ]
+
+    mejor = {"respuestas": {}, "generado": None}
+    for ruta in candidatos:
+        try:
+            datos = json.loads(ruta.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        # se compara la fecha de generacion como texto ISO, que ordena bien
+        if (datos.get("generado") or "") > (mejor.get("generado") or ""):
+            mejor = datos
+
+    _SNAPSHOT = mejor
     return _SNAPSHOT
 
 
