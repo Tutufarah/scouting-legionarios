@@ -35,7 +35,8 @@ BASE_URL = "https://api.sofascore.com/api/v1"
 TTL_UNA_SEMANA = 604800  # 7 dias
 TIMEOUT = 20
 
-_SNAPSHOT = None  # copia local, se carga una sola vez
+_SNAPSHOT = None          # copia local en memoria
+_SNAPSHOT_HUELLA = None   # estado del archivo con el que se cargo
 
 HEADERS = {
     "User-Agent": (
@@ -168,15 +169,22 @@ def _cargar_snapshot() -> dict:
     Se lee una sola vez y se guarda en memoria. Si no hay archivo, la app
     funciona igual: simplemente no hay respaldo.
     """
-    global _SNAPSHOT
-    if _SNAPSHOT is not None:
-        return _SNAPSHOT
+    global _SNAPSHOT, _SNAPSHOT_HUELLA
 
     base = Path(__file__).resolve().parent
     candidatos = [
         base / "data" / "snapshot_sofascore.json",
         base / "snapshot_sofascore.json",
     ]
+
+    # Huella de los archivos en disco. Si cambia, se vuelve a leer: si no, un
+    # proceso que siga vivo tras subir datos nuevos seguiria con los viejos.
+    huella = tuple(
+        (str(r), r.stat().st_mtime_ns, r.stat().st_size) if r.exists() else (str(r), 0, 0)
+        for r in candidatos
+    )
+    if _SNAPSHOT is not None and huella == _SNAPSHOT_HUELLA:
+        return _SNAPSHOT
 
     mejor = {"respuestas": {}, "generado": None}
     for ruta in candidatos:
@@ -189,12 +197,24 @@ def _cargar_snapshot() -> dict:
             mejor = datos
 
     _SNAPSHOT = mejor
+    _SNAPSHOT_HUELLA = huella
     return _SNAPSHOT
 
 
 def fecha_snapshot() -> str | None:
     """Cuando se genero la copia local, para poder avisarlo en pantalla."""
     return _cargar_snapshot().get("generado")
+
+
+def _version_datos() -> str:
+    """Etiqueta de la version de los datos, usada como clave de cache.
+
+    Todas las funciones cacheadas la reciben como primer argumento. Sin esto,
+    la cache de 7 dias seguia devolviendo lo calculado con la copia anterior
+    aunque se subiera una nueva: la app mostraba la fecha nueva en la barra
+    lateral pero los numeros viejos en las tablas.
+    """
+    return fecha_snapshot() or "sin-copia"
 
 
 @st.cache_data(ttl=3600, show_spinner=False)
@@ -269,8 +289,13 @@ def _pedir_json(ruta: str) -> tuple[dict | None, str | None]:
     return None, f"{error_curl}; requests: {error_requests}"
 
 
-@st.cache_data(ttl=TTL_UNA_SEMANA, show_spinner=False)
 def obtener_season_id(player_id, tournament_id) -> tuple[int | None, str | None, str | None]:
+    """Temporada mas reciente del jugador en ese torneo. Ver `_obtener_season_id`."""
+    return _obtener_season_id(_version_datos(), player_id, tournament_id)
+
+
+@st.cache_data(ttl=TTL_UNA_SEMANA, show_spinner=False)
+def _obtener_season_id(version_datos, player_id, tournament_id) -> tuple[int | None, str | None, str | None]:
     """Resuelve la temporada mas reciente del jugador en ese torneo.
 
     Devuelve (season_id, etiqueta_del_anio, error).
@@ -298,8 +323,13 @@ def obtener_season_id(player_id, tournament_id) -> tuple[int | None, str | None,
     return None, None, f"el jugador no registra datos en el torneo {tournament_id}"
 
 
-@st.cache_data(ttl=TTL_UNA_SEMANA, show_spinner=False)
 def get_player_stats(player_id, tournament_id, season_id=None) -> dict:
+    """Estadisticas de la temporada. Ver `_get_player_stats`."""
+    return _get_player_stats(_version_datos(), player_id, tournament_id, season_id)
+
+
+@st.cache_data(ttl=TTL_UNA_SEMANA, show_spinner=False)
+def _get_player_stats(version_datos, player_id, tournament_id, season_id=None) -> dict:
     """Estadisticas del jugador en la temporada actual de ese torneo.
 
     Devuelve siempre un diccionario con la misma forma. Si algo falla, trae los
@@ -351,8 +381,13 @@ def get_player_stats(player_id, tournament_id, season_id=None) -> dict:
     return resultado
 
 
-@st.cache_data(ttl=TTL_UNA_SEMANA, show_spinner=False)
 def get_player_heatmap(player_id, tournament_id, season_id=None) -> dict:
+    """Mapa de calor de la temporada. Ver `_get_player_heatmap`."""
+    return _get_player_heatmap(_version_datos(), player_id, tournament_id, season_id)
+
+
+@st.cache_data(ttl=TTL_UNA_SEMANA, show_spinner=False)
+def _get_player_heatmap(version_datos, player_id, tournament_id, season_id=None) -> dict:
     """Coordenadas del mapa de calor de la temporada.
 
     Devuelve las listas `x`, `y` y `count` (peso de cada punto), en escala
@@ -406,8 +441,13 @@ def get_player_heatmap(player_id, tournament_id, season_id=None) -> dict:
     return resultado
 
 
-@st.cache_data(ttl=TTL_UNA_SEMANA, show_spinner=False)
 def get_player_last_matches(player_id, limite: int = 6) -> dict:
+    """Ultimos partidos del jugador. Ver `_get_player_last_matches`."""
+    return _get_player_last_matches(_version_datos(), player_id, limite)
+
+
+@st.cache_data(ttl=TTL_UNA_SEMANA, show_spinner=False)
+def _get_player_last_matches(version_datos, player_id, limite: int = 6) -> dict:
     """Ultimos partidos del jugador, jugara o no, con fecha y nota.
 
     Incluye todas las competiciones (liga, copas y seleccion), no solo el
@@ -505,8 +545,13 @@ def get_player_last_matches(player_id, limite: int = 6) -> dict:
     return resultado
 
 
-@st.cache_data(ttl=TTL_UNA_SEMANA, show_spinner=False)
 def get_next_matches(club_id, limite: int = 4) -> dict:
+    """Proximos partidos del club. Ver `_get_next_matches`."""
+    return _get_next_matches(_version_datos(), club_id, limite)
+
+
+@st.cache_data(ttl=TTL_UNA_SEMANA, show_spinner=False)
+def _get_next_matches(version_datos, club_id, limite: int = 4) -> dict:
     """Proximos partidos del club, con fecha y condicion de local o visitante.
 
     Se pide por CLUB y no por jugador: SofaScore no expone un calendario futuro
