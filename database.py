@@ -179,14 +179,16 @@ LEGIONARIOS: list[dict] = [
     {
         "id": "luis-haquin",
         "name": "Luis Haquín",
-        "current_club": "Sin club actual",
-        "club_id": None,
-        "league_name": "Saudi 1st Division (ultima registrada)",
+        "current_club": "Khor Fakkan",
+        "club_id": 234227,
+        "league_name": "UAE Pro League",
         "main_position": "DF",
         "puesto": "DFC",  # SofaScore: DC
         "sofascore_id": 876304,
-        "tournament_id": 2120,
-        # OJO: sin equipo: no hay proximos partidos y las cifras son de su ultima temporada registrada
+        "tournament_id": 971,
+        # Fichaje reciente: venia de Al Tai (Saudi 1st Division). Todavia no
+        # debuta en Emiratos, asi que la temporada aparecera sin estadisticas
+        # hasta que juegue. Sus ultimos partidos si se ven en la ficha.
     },
     {
         "id": "lysander-lucas-urena",
@@ -235,13 +237,16 @@ LEGIONARIOS: list[dict] = [
     {
         "id": "oscar-lopez",
         "name": "Oscar Lopez",
-        "current_club": "Mallorca B",
-        "club_id": 34997,
-        "league_name": "Tercera Federación, Group 11",
+        "current_club": "Getafe B",
+        "club_id": 43753,
+        "league_name": "Segunda Federación",
         "main_position": "MC",
-        "puesto": "MC",  # SofaScore: ?
+        "puesto": "MC",  # SofaScore: MC
         "sofascore_id": 1994823,
-        "tournament_id": 11360,
+        "tournament_id": 544,
+        # Fichaje reciente: venia del Mallorca B. El 08/08 jugo 1 minuto con el
+        # PRIMER equipo del Getafe, pero fue amistoso de pretemporada. Su liga
+        # es la Segunda Federacion y todavia no registra estadisticas en ella.
     },
     {
         "id": "quimey-vasco",

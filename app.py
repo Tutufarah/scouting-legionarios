@@ -991,6 +991,20 @@ with tab_ficha:
         for p in ultimos["partidos"]:
             fecha = datetime.fromtimestamp(p["timestamp"], tz=timezone.utc)
             marcador = f"{p['goles_local']}-{p['goles_visitante']}"
+            # Como participo: titular completo, sustituido, o entrado desde el
+            # banquillo. Para leer el rol de un jugador importa tanto como los
+            # minutos: no es lo mismo 63' de titular que 63' entrando pronto.
+            if p["estado"] != "Jugo":
+                participacion = "—"
+            elif p.get("entro_min") is not None:
+                participacion = f"Entró {p['entro_min']}'"
+            elif p.get("salio_min") is not None:
+                participacion = f"Salió {p['salio_min']}'"
+            elif p.get("titular"):
+                participacion = "Titular completo"
+            else:
+                participacion = "Jugó"
+
             filas_partidos.append({
                 "Fecha": fecha.strftime("%d/%m/%Y"),
                 "Competicion": p["competicion"],
@@ -998,6 +1012,7 @@ with tab_ficha:
                 "Cond.": "Local" if p["es_local"] else "Visitante",
                 "Resultado": p["resultado"],
                 "Estado": p["estado"].replace("Jugo", "Jugó"),
+                "Participacion": participacion,
                 "Min": p["minutos"],
                 "Nota": p["rating"],
             })
@@ -1037,7 +1052,19 @@ with tab_ficha:
     proximos = get_next_matches(jugador.get("club_id"))
 
     if not proximos["ok"]:
-        st.warning(f"Sin calendario: {proximos['error']}")
+        # Se traduce el motivo tecnico a algo legible: lo habitual no es un
+        # fallo, sino que esa liga todavia no publico su calendario.
+        motivo = proximos["error"] or ""
+        if "404" in motivo or "sin datos" in motivo or "sin partidos" in motivo:
+            st.info(
+                f"{jugador['current_club']} no tiene partidos programados en "
+                "SofaScore. Suele pasar en ligas de pretemporada, en parón o "
+                "en categorias juveniles."
+            )
+        elif "no tiene club" in motivo:
+            st.info("El jugador no tiene club registrado, asi que no hay calendario.")
+        else:
+            st.warning(f"No se pudo cargar el calendario: {motivo}")
     else:
         filas_proximos = []
         for p in proximos["partidos"]:

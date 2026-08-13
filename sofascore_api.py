@@ -283,6 +283,8 @@ def _pedir_json(ruta: str) -> tuple[dict | None, str | None]:
 
     # Ultimo recurso: la copia local.
     guardado = _cargar_snapshot().get("respuestas", {}).get(ruta)
+    if isinstance(guardado, dict) and guardado.get("__sin_datos__"):
+        return None, "sin datos en SofaScore (404)"
     if guardado is not None:
         return guardado, None
 
@@ -446,6 +448,92 @@ def get_player_last_matches(player_id, limite: int = 6) -> dict:
     return _get_player_last_matches(_version_datos(), player_id, limite)
 
 
+def participacion_en_partido(event_id, player_id) -> dict:
+    """Como participo el jugador en ese partido, segun la ALINEACION.
+
+    No se usa el resumen de `events/last` para esto porque miente. Casos reales
+    comprobados con Oscar Lopez:
+
+      - Getafe-Monaco (06/08/2026): fue TITULAR y salio al minuto 63, pero el
+        resumen venia vacio y se clasificaba como "No convocado".
+      - Getafe-Tottenham (08/08/2026): entro al 81 y el resumen decia
+        1 minuto jugado.
+
+    Por eso los minutos se calculan a partir de los cambios (`incidents`), que
+    es el dato duro: quien entro, quien salio y en que minuto.
+
+    Devuelve estado, minutos, y los minutos de entrada/salida cuando los hay.
+    """
+    vacio = {"estado": None, "minutos": 0, "titular": False,
+             "entro_min": None, "salio_min": None, "rating": None}
+
+    alineaciones, error = _pedir_json(f"event/{event_id}/lineups")
+    if error or not alineaciones:
+        return vacio
+
+    ficha = None
+    for lado in ("home", "away"):
+        for jugador in (alineaciones.get(lado) or {}).get("players") or []:
+            if (jugador.get("player") or {}).get("id") == player_id:
+                ficha = jugador
+                break
+        if ficha:
+            break
+
+    if ficha is None:
+        # no aparece en la lista de convocados
+        return {**vacio, "estado": "No convocado"}
+
+    estadisticas = ficha.get("statistics") or {}
+    es_suplente = bool(ficha.get("substitute"))
+    resultado = {
+        "estado": None,
+        "minutos": 0,
+        "titular": not es_suplente,
+        "entro_min": None,
+        "salio_min": None,
+        "rating": estadisticas.get("rating"),
+    }
+
+    incidencias, _ = _pedir_json(f"event/{event_id}/incidents")
+    minutos_incidencias = []
+    for inc in (incidencias or {}).get("incidents", []):
+        if inc.get("time") is not None:
+            minutos_incidencias.append(inc["time"])
+        if inc.get("incidentType") != "substitution":
+            continue
+        minuto = inc.get("time")
+        if (inc.get("playerIn") or {}).get("id") == player_id:
+            resultado["entro_min"] = minuto
+        elif (inc.get("playerOut") or {}).get("id") == player_id:
+            resultado["salio_min"] = minuto
+
+    # Minuto en que acaba el partido: 90 salvo que haya prorroga, cosa que se
+    # detecta porque hay cambios mas alla del 90 (eliminatorias europeas, copas).
+    fin = max([90] + minutos_incidencias) if minutos_incidencias else 90
+
+    if es_suplente:
+        if resultado["entro_min"] is None:
+            resultado["estado"] = "Banquillo"
+            resultado["minutos"] = 0
+        else:
+            resultado["estado"] = "Jugo"
+            resultado["minutos"] = max(0, fin - resultado["entro_min"])
+    else:
+        resultado["estado"] = "Jugo"
+        resultado["minutos"] = (
+            resultado["salio_min"] if resultado["salio_min"] is not None else fin
+        )
+
+    # Solo si no hubo cambios se acepta el minutaje que reporta SofaScore.
+    if resultado["entro_min"] is None and resultado["salio_min"] is None:
+        informados = estadisticas.get("minutesPlayed")
+        if informados:
+            resultado["minutos"] = informados
+
+    return resultado
+
+
 @st.cache_data(ttl=TTL_UNA_SEMANA, show_spinner=False)
 def _get_player_last_matches(version_datos, player_id, limite: int = 6) -> dict:
     """Ultimos partidos del jugador, jugara o no, con fecha y nota.
@@ -454,11 +542,11 @@ def _get_player_last_matches(version_datos, player_id, limite: int = 6) -> dict:
     torneo del filtro: para valorar el momento de forma importa todo lo que
     disputo el equipo. Cada partido trae de que competicion es.
 
-    Cada partido se clasifica en tres estados, porque para leer la densidad
-    competitiva de un jugador no basta con lo que jugo:
+    Cada partido se clasifica en tres estados, tomados de la alineacion real
+    del encuentro (ver `participacion_en_partido`):
 
-      - "Jugo"          : tuvo minutos (y por tanto nota).
-      - "Banquillo"     : estuvo convocado pero no entro (`onBenchMap`).
+      - "Jugo"          : fue titular o entro desde el banquillo.
+      - "Banquillo"     : estuvo convocado y no entro.
       - "No convocado"  : el equipo jugo y el no figuro en la citacion.
 
     Devuelve ademas `media_rating`, el promedio de las notas de los partidos
@@ -477,21 +565,39 @@ def _get_player_last_matches(version_datos, player_id, limite: int = 6) -> dict:
     equipo_por_evento = (datos or {}).get("playedForTeamMap") or {}
     en_banquillo = (datos or {}).get("onBenchMap") or {}
 
-    partidos = []
-    for evento in eventos:
-        if (evento.get("status") or {}).get("type") != "finished":
-            continue
+    # Se ordenan primero y se recortan a los que se van a mostrar: consultar la
+    # alineacion cuesta dos peticiones por partido y no tiene sentido hacerlo
+    # con toda la temporada.
+    terminados = [e for e in eventos
+                  if (e.get("status") or {}).get("type") == "finished"]
+    terminados.sort(key=lambda e: e.get("startTimestamp") or 0, reverse=True)
+    terminados = terminados[:limite]
 
+    partidos = []
+    for evento in terminados:
         id_evento = str(evento.get("id"))
         stats_partido = estadisticas.get(id_evento) or {}
-        minutos = stats_partido.get("minutesPlayed") or 0
 
-        if minutos:
-            estado = "Jugo"
-        elif en_banquillo.get(id_evento):
-            estado = "Banquillo"
+        # La alineacion manda; el resumen solo se usa si aquella no esta.
+        detalle = participacion_en_partido(evento.get("id"), player_id)
+        if detalle["estado"]:
+            estado = detalle["estado"]
+            minutos = detalle["minutos"]
+            nota = detalle["rating"] if detalle["rating"] is not None else stats_partido.get("rating")
+            entro_min = detalle["entro_min"]
+            salio_min = detalle["salio_min"]
+            titular = detalle["titular"]
         else:
-            estado = "No convocado"
+            minutos = stats_partido.get("minutesPlayed") or 0
+            if minutos:
+                estado = "Jugo"
+            elif en_banquillo.get(id_evento):
+                estado = "Banquillo"
+            else:
+                estado = "No convocado"
+            nota = stats_partido.get("rating")
+            entro_min = salio_min = None
+            titular = bool(minutos)
 
         local = (evento.get("homeTeam") or {}).get("name") or "?"
         visitante = (evento.get("awayTeam") or {}).get("name") or "?"
@@ -523,13 +629,15 @@ def _get_player_last_matches(version_datos, player_id, limite: int = 6) -> dict:
             "goles_contra": gc,
             "resultado": resultado_txt,
             "estado": estado,
-            "rating": stats_partido.get("rating"),
+            "rating": nota,
             "minutos": minutos,
+            "titular": titular,
+            "entro_min": entro_min,
+            "salio_min": salio_min,
         })
 
-    # La API los entrega del mas antiguo al mas reciente.
     partidos.sort(key=lambda p: p["timestamp"] or 0, reverse=True)
-    ultimos = partidos[:limite]
+    ultimos = partidos
     resultado["partidos"] = ultimos
 
     notas = [p["rating"] for p in ultimos if p["estado"] == "Jugo" and p["rating"] is not None]
