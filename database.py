@@ -98,6 +98,19 @@ LEGIONARIOS: list[dict] = [
         "tournament_id": 777,
     },
     {
+        "id": "fernando-nava",
+        "name": "Fernando Nava",
+        "current_club": "CD Nacional",
+        "club_id": 3013,
+        "league_name": "Liga Portugal Betclic",
+        "main_position": "ED",
+        "puesto": "EI",  # SofaScore: LW
+        "sofascore_id": 1464254,
+        "tournament_id": 238,
+        # Fichaje reciente: venia de la Division Profesional boliviana. Aun no
+        # registra estadisticas en Portugal.
+    },
+    {
         "id": "gabriel-villamil",
         "name": "Gabriel Villamil",
         "current_club": "LDU Quito",
@@ -280,6 +293,20 @@ LEGIONARIOS: list[dict] = [
         "puesto": "LI",  # SofaScore: DL/ML
         "sofascore_id": 986778,
         "tournament_id": 203,
+    },
+    {
+        "id": "santiago-cuiza",
+        "name": "Santiago Cuiza",
+        "current_club": "FC Kryvbas Kryvyi Rih",
+        "club_id": 294048,
+        "league_name": "Ukrainian Premier League",
+        "main_position": "MC",
+        "puesto": "MC",  # SofaScore: DR (lateral derecho)
+        "sofascore_id": 1495679,
+        "tournament_id": 218,
+        # OJO: el cuerpo tecnico lo situa como INTERIOR DERECHO; SofaScore lo
+        # tiene como lateral derecho. Se respeta el criterio del CT.
+        # Fichaje reciente: aun no registra estadisticas en Ucrania.
     },
     {
         "id": "yomar-rocha",
