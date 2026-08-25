@@ -56,13 +56,15 @@ LEGIONARIOS: list[dict] = [
     {
         "id": "diego-arroyo",
         "name": "Diego Arroyo",
-        "current_club": "Shakhtar Donetsk",
-        "club_id": 3313,
-        "league_name": "Ukrainian Premier League",
+        "current_club": "Hapoel Petach Tikva",
+        "club_id": 5199,
+        "league_name": "Israeli Premier League",
         "main_position": "DF",
         "puesto": "DFC",  # SofaScore: DC
         "sofascore_id": 1510240,
-        "tournament_id": 218,
+        "tournament_id": 266,
+        # Fichaje reciente: venia del Shakhtar Donetsk. Sus ultimos partidos
+        # siguen siendo con el Shakhtar hasta que debute en Israel.
     },
     {
         "id": "diego-medina",
@@ -250,16 +252,16 @@ LEGIONARIOS: list[dict] = [
     {
         "id": "oscar-lopez",
         "name": "Oscar Lopez",
-        "current_club": "Getafe B",
-        "club_id": 43753,
-        "league_name": "Segunda Federación",
+        "current_club": "Getafe",
+        "club_id": 2859,
+        "league_name": "LaLiga",
         "main_position": "MC",
         "puesto": "MC",  # SofaScore: MC
         "sofascore_id": 1994823,
-        "tournament_id": 544,
-        # Fichaje reciente: venia del Mallorca B. El 08/08 jugo 1 minuto con el
-        # PRIMER equipo del Getafe, pero fue amistoso de pretemporada. Su liga
-        # es la Segunda Federacion y todavia no registra estadisticas en ella.
+        "tournament_id": 8,
+        # Subio al PRIMER equipo: SofaScore ya lo ficha en el Getafe de LaLiga.
+        # El 23/08 ante el Racing entro en la convocatoria pero se quedo en el
+        # banquillo, asi que todavia no debuto en Primera.
     },
     {
         "id": "quimey-vasco",
