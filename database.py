@@ -219,13 +219,18 @@ LEGIONARIOS: list[dict] = [
     {
         "id": "marcelo-torrez",
         "name": "Marcelo Torrez",
-        "current_club": "Santos U20",
-        "club_id": 199299,
-        "league_name": "U20 Campeonato Brasileiro",
+        "current_club": "Santos",
+        "club_id": 1968,
+        "league_name": "Brasileirão Betano · juega en Sub-20",
         "main_position": "DF",
         "puesto": "DFC",  # SofaScore: DC
         "sofascore_id": 1484122,
         "tournament_id": 9233,
+        # Subio al plantel del primer equipo (SofaScore ya lo ficha en el
+        # Santos), pero sigue compitiendo en Sub-20: no registra ni un partido
+        # en el Brasileirao. Por eso el club y el calendario son los del primer
+        # equipo, mientras que las estadisticas se leen del torneo Sub-20
+        # (9233), que es donde realmente juega.
     },
     {
         "id": "miguel-terceros",

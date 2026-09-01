@@ -20,6 +20,7 @@ mplsoccer en escala StatsBomb (120 x 80), asi que hay que convertirlas con
 from __future__ import annotations
 
 import json
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import streamlit as st
@@ -573,13 +574,19 @@ def _get_player_last_matches(version_datos, player_id, limite: int = 6) -> dict:
     terminados.sort(key=lambda e: e.get("startTimestamp") or 0, reverse=True)
     terminados = terminados[:limite]
 
+    # La alineacion de cada partido son dos peticiones, y en serie los seis
+    # tardaban unos 2,6 s por jugador: al recorrer los 25 de la cancha y del
+    # listado, la app se quedaba minutos cargando. Se piden en paralelo.
+    _cargar_snapshot()  # se precarga aqui para que los hilos no compitan por leerla
+    with ThreadPoolExecutor(max_workers=6) as pool:
+        detalles = list(pool.map(
+            lambda e: participacion_en_partido(e.get("id"), player_id), terminados
+        ))
+
     partidos = []
-    for evento in terminados:
+    for evento, detalle in zip(terminados, detalles):
         id_evento = str(evento.get("id"))
         stats_partido = estadisticas.get(id_evento) or {}
-
-        # La alineacion manda; el resumen solo se usa si aquella no esta.
-        detalle = participacion_en_partido(evento.get("id"), player_id)
         if detalle["estado"]:
             estado = detalle["estado"]
             minutos = detalle["minutos"]
